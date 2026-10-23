@@ -136,9 +136,27 @@
     </div>
   </div>
 
+  <!-- ================= SCREEN 0: RESTRICTED GATEKEEPER ================= -->
+  <section id="gatekeeper-view" class="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center p-4 transition-opacity">
+    <div class="w-full max-w-sm bg-slate-900 border border-amber-500/40 rounded-3xl p-6 text-center shadow-2xl space-y-4">
+      <div class="text-4xl">🔒</div>
+      <div>
+        <h2 class="text-xl font-black text-amber-300">Restricted Access</h2>
+        <p class="text-xs text-slate-400 mt-1">This app is private. Please enter the group passcode to join the table.</p>
+      </div>
+      
+      <input type="password" id="access-code-input" placeholder="Enter Group Passcode" 
+        class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-4 py-3 text-center text-sm text-amber-200 font-bold outline-none transition">
+      
+      <button onclick="verifyAccessCode()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-sm shadow-lg transition">
+        Unlock App
+      </button>
+    </div>
+  </section>
+
   <!-- ================= SCREEN 1: HOME (CREATE OR JOIN ROOM) ================= -->
-  <section id="home-view" class="flex-1 flex flex-col items-center justify-center p-3 sm:p-4 overflow-y-auto z-20">
-    <div class="w-full max-w-sm sm:max-w-md bg-slate-900/95 border border-amber-500/30 rounded-3xl p-5 sm:p-6 shadow-2xl backdrop-blur-md space-y-4">
+  <section id="home-view" class="flex-1 flex flex-col items-center justify-center p-3 sm:p-4 overflow-y-auto z-20 hidden">
+    <div class="w-full max-w-sm sm:max-w-md bg-slate-900/95 border border-amber-500/30 rounded-3xl p-5 sm:p-6 shadow-2xl backdrop-blur-md space-y-4 relative">
       <div class="text-center">
         <div class="inline-flex space-x-2 p-2 bg-amber-500/10 border border-amber-500/20 rounded-2xl mb-1 text-2xl">
           <span class="text-rose-500">♥</span>
@@ -147,7 +165,7 @@
           <span class="text-amber-400">♦</span>
         </div>
         <h2 class="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-400">
-          PLAY WITH FRIENDS
+          Game Aadakapote you are GAY 😂😂😂
         </h2>
         <p class="text-xs text-slate-400 mt-0.5">
           13 Cards • 201 Elimination • Peer-to-Peer
@@ -209,6 +227,14 @@
         <button onclick="startPracticeSoloMode()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-amber-300/90 font-bold rounded-xl text-xs flex items-center justify-center space-x-1 transition">
           <span>🤖 Solo Practice vs Smart AI (Instant Test)</span>
         </button>
+      </div>
+
+      <!-- Developer Credits Footer -->
+      <div class="pt-3 mt-2 text-center border-t border-slate-800/60">
+        <p class="text-[9px] sm:text-[10px] text-slate-500 font-medium leading-relaxed">
+          Developed by <span class="text-amber-500/70 font-bold">Bhavani</span><br>
+          with cooperation of Weiterstadt and Darmstadt familie support.
+        </p>
       </div>
     </div>
   </section>
@@ -391,7 +417,7 @@
   <!-- ================= MODAL: ROUND SUMMARY ================= -->
   <div id="modal-round-summary" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 hidden">
     <div class="w-full max-w-md bg-slate-900 border-2 border-amber-500 rounded-3xl p-5 shadow-2xl space-y-4 text-center">
-      <div class="text-3xl">🎉</div>
+      <div class="text-4xl mb-1">🎉📣👯‍♀️</div>
       <h3 id="round-winner-heading" class="text-lg sm:text-xl font-black text-amber-300">Round Won!</h3>
       <p id="round-winner-sub" class="text-xs text-slate-300">
         Valid Rummy Declaration with 0 penalty points!
@@ -411,7 +437,7 @@
   <!-- ================= MODAL: GRAND CHAMPION ================= -->
   <div id="modal-grand-champion" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 hidden">
     <div class="w-full max-w-sm bg-gradient-to-b from-amber-950/80 to-slate-950 border-2 border-amber-400 rounded-3xl p-6 text-center space-y-4 shadow-2xl">
-      <div class="text-5xl animate-bounce">👑</div>
+      <div class="text-5xl animate-bounce mb-2">👑📣👯‍♀️</div>
       <h2 class="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-400">
         GRAND CHAMPION!
       </h2>
@@ -450,6 +476,10 @@
 
   <!-- ================= APPLICATION SCRIPT ================= -->
   <script>
+    // ACCESS CONTROL SETTINGS
+    // YOU CAN CHANGE THIS PASSCODE TO ANYTHING YOU WANT
+    const GROUP_PASSCODE = "weiterstadt"; 
+
     const SUITS = [
       { id: 'S', symbol: '♠', isRed: false },
       { id: 'H', symbol: '♥', isRed: true },
@@ -540,6 +570,27 @@
           if (navigator.vibrate) navigator.vibrate([100, 50, 150]);
         } catch(e){}
       }
+      playCheerleader(winnerName, isGrandChamp = false) {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const phrases = isGrandChamp 
+            ? [`Gimme a W! Gimme an I! Gimme an N! ${winnerName} is the Grand Champion! Woohoo!`, `Oh my gosh, ${winnerName} won the whole tournament! Go ${winnerName}!`]
+            : [`Yay! ${winnerName} wins the round! Go ${winnerName}!`, `Awesome job, ${winnerName}! You rock!`, `Give it up for ${winnerName}! Woohoo!`];
+          const text = phrases[Math.floor(Math.random() * phrases.length)];
+          
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.pitch = 1.5; 
+          utterance.rate = 1.2;  
+          
+          const voices = window.speechSynthesis.getVoices();
+          const femaleVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Samantha') || v.name.includes('Google US English'));
+          if (femaleVoice) {
+            utterance.voice = femaleVoice;
+          }
+          
+          window.speechSynthesis.speak(utterance);
+        }
+      }
     }
     const audio = new AudioEngine();
 
@@ -585,6 +636,31 @@
     let turnTimerInterval = null;
 
     window.addEventListener('DOMContentLoaded', () => {
+      // Access Control Check
+      if (localStorage.getItem('rummy_access_granted') === 'true') {
+        initAppRoutes();
+      } else {
+        document.getElementById('gatekeeper-view').classList.remove('hidden');
+      }
+    });
+
+    function verifyAccessCode() {
+      const input = document.getElementById('access-code-input').value.toLowerCase().trim();
+      if (input === GROUP_PASSCODE) {
+        localStorage.setItem('rummy_access_granted', 'true');
+        document.getElementById('gatekeeper-view').classList.add('opacity-0');
+        setTimeout(() => {
+          document.getElementById('gatekeeper-view').classList.add('hidden');
+          initAppRoutes();
+        }, 300);
+      } else {
+        showToast('Incorrect passcode!', 'error');
+        document.getElementById('access-code-input').value = '';
+      }
+    }
+
+    function initAppRoutes() {
+      document.getElementById('home-view').classList.remove('hidden');
       const params = new URLSearchParams(window.location.search);
       const urlRoom = params.get('room');
       if (urlRoom) {
@@ -592,7 +668,7 @@
         document.getElementById('join-code-input').value = urlRoom.toUpperCase().trim();
       }
       setupPointerListeners();
-    });
+    }
 
     function setEntryTab(tab) {
       const btnCreate = document.getElementById('tab-btn-create');
@@ -1545,6 +1621,9 @@
       clearInterval(turnTimerInterval);
       app.status = 'round_over';
       winner.lastRoundScore = 0;
+      
+      // CHEERLEADER CALL
+      audio.playCheerleader(winner.name);
 
       const summary = [];
       app.tournament.players.forEach(p => {
@@ -1607,6 +1686,8 @@
 
     function triggerGrandChampion(champ) {
       audio.playVictory();
+      audio.playCheerleader(champ.name, true);
+      
       displayChampionModal(champ);
       app.peersMap.forEach(conn => conn.send({ type: 'GRAND_CHAMPION', champ: champ }));
     }
