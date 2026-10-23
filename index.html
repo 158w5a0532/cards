@@ -136,26 +136,8 @@
     </div>
   </div>
 
-  <!-- ================= SCREEN 0: RESTRICTED GATEKEEPER ================= -->
-  <section id="gatekeeper-view" class="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center p-4 transition-opacity">
-    <div class="w-full max-w-sm bg-slate-900 border border-amber-500/40 rounded-3xl p-6 text-center shadow-2xl space-y-4">
-      <div class="text-4xl">🔒</div>
-      <div>
-        <h2 class="text-xl font-black text-amber-300">Restricted Access</h2>
-        <p class="text-xs text-slate-400 mt-1">This app is private. Please enter the group passcode to join the table.</p>
-      </div>
-      
-      <input type="password" id="access-code-input" placeholder="Enter Group Passcode" 
-        class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-4 py-3 text-center text-sm text-amber-200 font-bold outline-none transition">
-      
-      <button onclick="verifyAccessCode()" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-sm shadow-lg transition">
-        Unlock App
-      </button>
-    </div>
-  </section>
-
-  <!-- ================= SCREEN 1: HOME (CREATE OR JOIN ROOM) ================= -->
-  <section id="home-view" class="flex-1 flex flex-col items-center justify-center p-3 sm:p-4 overflow-y-auto z-20 hidden">
+  <!-- ================= SCREEN 1: HOME (JOIN & HIDDEN ADMIN) ================= -->
+  <section id="home-view" class="flex-1 flex flex-col items-center justify-center p-3 sm:p-4 overflow-y-auto z-20">
     <div class="w-full max-w-sm sm:max-w-md bg-slate-900/95 border border-amber-500/30 rounded-3xl p-5 sm:p-6 shadow-2xl backdrop-blur-md space-y-4 relative">
       <div class="text-center">
         <div class="inline-flex space-x-2 p-2 bg-amber-500/10 border border-amber-500/20 rounded-2xl mb-1 text-2xl">
@@ -165,7 +147,7 @@
           <span class="text-amber-400">♦</span>
         </div>
         <h2 class="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-400">
-          Game Aadakapote you are GAY 😂😂😂
+          PLAY WITH FRIENDS
         </h2>
         <p class="text-xs text-slate-400 mt-0.5">
           13 Cards • 201 Elimination • Peer-to-Peer
@@ -176,11 +158,13 @@
         <label class="block text-xs font-bold text-amber-300 uppercase tracking-wider mb-1">
           Your Nickname
         </label>
-        <input type="text" id="user-nickname-input" maxlength="14" placeholder="Enter your name (e.g. Bhavani)" 
+        <!-- The oninput function checks for the secret trigger -->
+        <input type="text" id="user-nickname-input" oninput="checkAdminAccess(this.value)" maxlength="14" placeholder="Enter your name" 
           class="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-amber-200 font-bold outline-none transition">
       </div>
 
-      <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800">
+      <!-- Hidden by Default: Admin Tabs -->
+      <div id="admin-tabs" class="grid-cols-2 gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800 hidden">
         <button id="tab-btn-create" onclick="setEntryTab('create')" class="py-2 rounded-lg font-black text-xs transition bg-amber-500 text-slate-950 shadow">
           Create Room (Host)
         </button>
@@ -189,7 +173,8 @@
         </button>
       </div>
 
-      <div id="panel-create-room" class="space-y-3">
+      <!-- Hidden by Default: Create Room Panel -->
+      <div id="panel-create-room" class="space-y-3 hidden">
         <div>
           <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
             Max Players (2 to 7)
@@ -209,7 +194,8 @@
         </button>
       </div>
 
-      <div id="panel-join-room" class="space-y-3 hidden">
+      <!-- Public by Default: Join Room Panel -->
+      <div id="panel-join-room" class="space-y-3">
         <div>
           <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">
             4-5 Letter Room Code
@@ -223,7 +209,8 @@
         </button>
       </div>
 
-      <div class="pt-2 border-t border-slate-800">
+      <!-- Hidden by Default: Solo Practice -->
+      <div id="solo-practice-container" class="pt-2 border-t border-slate-800 hidden">
         <button onclick="startPracticeSoloMode()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-amber-300/90 font-bold rounded-xl text-xs flex items-center justify-center space-x-1 transition">
           <span>🤖 Solo Practice vs Smart AI (Instant Test)</span>
         </button>
@@ -476,10 +463,6 @@
 
   <!-- ================= APPLICATION SCRIPT ================= -->
   <script>
-    // ACCESS CONTROL SETTINGS
-    // YOU CAN CHANGE THIS PASSCODE TO ANYTHING YOU WANT
-    const GROUP_PASSCODE = "weiterstadt"; 
-
     const SUITS = [
       { id: 'S', symbol: '♠', isRed: false },
       { id: 'H', symbol: '♥', isRed: true },
@@ -570,14 +553,22 @@
           if (navigator.vibrate) navigator.vibrate([100, 50, 150]);
         } catch(e){}
       }
-      playCheerleader(winnerName, isGrandChamp = false) {
+      playCheerleader(winnerName, eventType = 'WIN') {
         if ('speechSynthesis' in window) {
           window.speechSynthesis.cancel();
-          const phrases = isGrandChamp 
-            ? [`Gimme a W! Gimme an I! Gimme an N! ${winnerName} is the Grand Champion! Woohoo!`, `Oh my gosh, ${winnerName} won the whole tournament! Go ${winnerName}!`]
-            : [`Yay! ${winnerName} wins the round! Go ${winnerName}!`, `Awesome job, ${winnerName}! You rock!`, `Give it up for ${winnerName}! Woohoo!`];
-          const text = phrases[Math.floor(Math.random() * phrases.length)];
+          let phrases = [];
           
+          if (eventType === 'GRAND_CHAMPION') {
+            phrases = [`Gimme a W! Gimme an I! Gimme an N! ${winnerName} is the Grand Champion! Woohoo!`, `Oh my gosh, ${winnerName} won the whole tournament! Go ${winnerName}!`];
+          } else if (eventType === 'WIN') {
+            phrases = [`Yay! ${winnerName} wins the round! Go ${winnerName}!`, `Awesome job, ${winnerName}! You rock!`, `Give it up for ${winnerName}! Woohoo!`];
+          } else if (eventType === 'FIRST_LIFE') {
+            phrases = [`Ooh! ${winnerName} got their first life! Watch out!`, `Nice moves, ${winnerName}! Joker unlocked!`, `Let's go ${winnerName}! First milestone reached!`];
+          } else if (eventType === 'DANGER_ZONE') {
+            phrases = [`Danger! ${winnerName} is on fire! They are almost done!`, `Watch out everyone! ${winnerName} is getting super close!`, `Oh snap! ${winnerName} only has a few points left! Hold onto your cards!`];
+          }
+
+          const text = phrases[Math.floor(Math.random() * phrases.length)];
           const utterance = new SpeechSynthesisUtterance(text);
           utterance.pitch = 1.5; 
           utterance.rate = 1.2;  
@@ -587,7 +578,6 @@
           if (femaleVoice) {
             utterance.voice = femaleVoice;
           }
-          
           window.speechSynthesis.speak(utterance);
         }
       }
@@ -620,7 +610,11 @@
 
       localHand: [],
       selectedCardId: null,
-      hasPureLife: false
+      hasPureLife: false,
+      
+      // Dynamic Milestone Trackers
+      currentRound: 0,
+      localMilestones: { pure: false, danger: false }
     };
 
     let touchDrag = {
@@ -634,40 +628,29 @@
     };
 
     let turnTimerInterval = null;
+    let isAdminUnlocked = false;
 
     window.addEventListener('DOMContentLoaded', () => {
-      // Access Control Check
-      if (localStorage.getItem('rummy_access_granted') === 'true') {
-        initAppRoutes();
-      } else {
-        document.getElementById('gatekeeper-view').classList.remove('hidden');
-      }
-    });
-
-    function verifyAccessCode() {
-      const input = document.getElementById('access-code-input').value.toLowerCase().trim();
-      if (input === GROUP_PASSCODE) {
-        localStorage.setItem('rummy_access_granted', 'true');
-        document.getElementById('gatekeeper-view').classList.add('opacity-0');
-        setTimeout(() => {
-          document.getElementById('gatekeeper-view').classList.add('hidden');
-          initAppRoutes();
-        }, 300);
-      } else {
-        showToast('Incorrect passcode!', 'error');
-        document.getElementById('access-code-input').value = '';
-      }
-    }
-
-    function initAppRoutes() {
-      document.getElementById('home-view').classList.remove('hidden');
       const params = new URLSearchParams(window.location.search);
       const urlRoom = params.get('room');
       if (urlRoom) {
-        setEntryTab('join');
         document.getElementById('join-code-input').value = urlRoom.toUpperCase().trim();
       }
       setupPointerListeners();
+    });
+
+    // THE HIDDEN ADMIN TRIGGER
+    function checkAdminAccess(val) {
+      if (isAdminUnlocked) return;
+      if (val === 'BhavaniHost') {
+        isAdminUnlocked = true;
+        document.getElementById('admin-tabs').classList.remove('hidden');
+        document.getElementById('admin-tabs').classList.add('grid');
+        document.getElementById('solo-practice-container').classList.remove('hidden');
+        document.getElementById('user-nickname-input').value = 'Bhavani'; // Obscure the code
+        setEntryTab('create');
+        showToast('Admin Controls Unlocked! 👑', 'success');
+      }
     }
 
     function setEntryTab(tab) {
@@ -848,6 +831,8 @@
         displayRoundEndModal(data.winnerName, data.playersSummary);
       } else if (data.type === 'GRAND_CHAMPION') {
         displayChampionModal(data.champ);
+      } else if (data.type === 'MILESTONE_BROADCAST') {
+        triggerMilestoneUI(data.playerId, data.playerName, data.milestone);
       }
     }
 
@@ -964,6 +949,10 @@
       app.status = 'playing';
       if (resetRounds) app.tournament.roundNumber = 1;
 
+      // Reset milestones for new round
+      app.currentRound = app.tournament.roundNumber;
+      app.localMilestones = { pure: false, danger: false };
+
       const fullDeck = generateTwoDecks();
       app.tournament.wildJokerCard = fullDeck.pop();
 
@@ -1028,6 +1017,13 @@
 
     function syncClientGameState(data) {
       app.status = 'playing';
+      
+      // Reset local milestones if a new round just started
+      if (data.tournament.roundNumber > app.currentRound) {
+        app.currentRound = data.tournament.roundNumber;
+        app.localMilestones = { pure: false, danger: false };
+      }
+
       app.tournament = Object.assign(app.tournament, data.tournament);
       app.localHand = data.myHand;
       app.hasPureLife = data.hasPureLife;
@@ -1150,6 +1146,20 @@
         return a.value - b.value;
       });
     }
+    
+    function triggerMilestoneUI(playerId, playerName, milestone) {
+      if (milestone === 'FIRST_LIFE') {
+        audio.playCheerleader(playerName, 'FIRST_LIFE');
+        showToast(`🔓 ${playerName} unlocked their Secret Joker!`, 'success');
+        showFloatingEmoji(playerId, '🔓');
+        setTimeout(() => showFloatingEmoji(playerId, '✨'), 600);
+      } else if (milestone === 'DANGER_ZONE') {
+        audio.playCheerleader(playerName, 'DANGER_ZONE');
+        showToast(`🔥 WARNING: ${playerName} is almost ready to declare!`, 'error');
+        showFloatingEmoji(playerId, '🔥');
+        setTimeout(() => showFloatingEmoji(playerId, '🚨'), 600);
+      }
+    }
 
     function renderActiveTable() {
       document.getElementById('home-view').classList.add('hidden');
@@ -1160,16 +1170,33 @@
       const isMyTurn = activePlayer && activePlayer.id === app.myPlayerId;
 
       const hasPureNow = checkPureLifeInHand(app.localHand);
-      if (hasPureNow && !app.hasPureLife) {
+      const currentDeadwood = computeDeadwoodScore(app.localHand, hasPureNow, app.tournament.wildJokerCard);
+      
+      // Dynamic Milestone 1: FIRST LIFE (Pure Sequence)
+      if (hasPureNow && !app.localMilestones.pure) {
+        app.localMilestones.pure = true;
         app.hasPureLife = true;
         audio.playUnlock();
-        showToast('🔓 Pure Life Achieved! Joker Vault Unlocked!', 'success');
+        
         if (app.isHost) {
+          app.peersMap.forEach(conn => conn.send({ type: 'MILESTONE_BROADCAST', playerId: app.myPlayerId, playerName: app.myNickname, milestone: 'FIRST_LIFE' }));
+          triggerMilestoneUI(app.myPlayerId, app.myNickname, 'FIRST_LIFE');
           const me = app.tournament.players.find(p => p.id === app.myPlayerId);
           if (me) me.hasPureLife = true;
           broadcastGameSync();
         } else {
-          app.hostConn?.send({ type: 'PURE_LIFE_UNLOCKED', playerId: app.myPlayerId });
+          app.hostConn?.send({ type: 'MILESTONE_CLAIM', playerId: app.myPlayerId, milestone: 'FIRST_LIFE' });
+        }
+      }
+
+      // Dynamic Milestone 2: DANGER ZONE (<= 15 Deadwood Points left)
+      if (hasPureNow && currentDeadwood <= 15 && !app.localMilestones.danger) {
+        app.localMilestones.danger = true;
+        if (app.isHost) {
+          app.peersMap.forEach(conn => conn.send({ type: 'MILESTONE_BROADCAST', playerId: app.myPlayerId, playerName: app.myNickname, milestone: 'DANGER_ZONE' }));
+          triggerMilestoneUI(app.myPlayerId, app.myNickname, 'DANGER_ZONE');
+        } else {
+          app.hostConn?.send({ type: 'MILESTONE_CLAIM', playerId: app.myPlayerId, milestone: 'DANGER_ZONE' });
         }
       }
 
@@ -1257,7 +1284,7 @@
         pureText.textContent = "Pure Life Locked";
       }
 
-      document.getElementById('hand-deadwood-points').textContent = computeDeadwoodScore(app.localHand, app.hasPureLife, app.tournament.wildJokerCard);
+      document.getElementById('hand-deadwood-points').textContent = currentDeadwood;
       renderHandRack();
     }
 
@@ -1514,11 +1541,17 @@
       else if (data.type === 'DECLARE_ACTION') hostProcessDeclaration(data.playerId, data.finishCardId);
       else if (data.type === 'DROP_ACTION') hostProcessDrop(data.playerId);
       else if (data.type === 'EMOJI_ACTION') broadcastEmoji(data.playerId, data.emoji);
-      else if (data.type === 'PURE_LIFE_UNLOCKED') {
+      else if (data.type === 'MILESTONE_CLAIM') {
         const p = app.tournament.players.find(x => x.id === data.playerId);
-        if (p) p.hasPureLife = true;
-        broadcastGameSync();
-        renderActiveTable();
+        if (p) {
+          if (data.milestone === 'FIRST_LIFE') {
+            p.hasPureLife = true;
+            broadcastGameSync();
+            renderActiveTable();
+          }
+          app.peersMap.forEach(conn => conn.send({ type: 'MILESTONE_BROADCAST', playerId: data.playerId, playerName: p.name, milestone: data.milestone }));
+          triggerMilestoneUI(data.playerId, p.name, data.milestone);
+        }
       }
     }
 
@@ -1622,7 +1655,6 @@
       app.status = 'round_over';
       winner.lastRoundScore = 0;
       
-      // CHEERLEADER CALL
       audio.playCheerleader(winner.name);
 
       const summary = [];
@@ -1686,7 +1718,7 @@
 
     function triggerGrandChampion(champ) {
       audio.playVictory();
-      audio.playCheerleader(champ.name, true);
+      audio.playCheerleader(champ.name, 'GRAND_CHAMPION');
       
       displayChampionModal(champ);
       app.peersMap.forEach(conn => conn.send({ type: 'GRAND_CHAMPION', champ: champ }));
